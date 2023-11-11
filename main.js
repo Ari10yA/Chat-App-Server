@@ -7,13 +7,18 @@ const cors = require('cors');
 const { instrument } = require("@socket.io/admin-ui");
 
 const app = express();
-const server = createServer(app);
+const server = createServer(app,);
 const io = new socketio.Server(server,{
-    connectionStateRecovery: {},
-    cors: {
-        origin: '*'
-    }
+  cors: {
+    origin: '*'
+  },
+  connectionStateRecovery: {},
+  credentials: true
 });
+
+app.use(cors({
+  origin: "*"
+}))
 
 app.use(session({
     secret: 'my-super-secret',
@@ -56,9 +61,9 @@ io.on('connection', (socket) => {
     io.emit("users", users);
 
     socket.on("connect_error", (err) => {
-        if (err.message === "invalid username") {
-          this.usernameAlreadySelected = false;
-        }
+        // if (err.message === "invalid username") {
+        //   this.usernameAlreadySelected = false;
+        // }
       });
 
     socket.on('some-event', (msg) => {
@@ -66,6 +71,10 @@ io.on('connection', (socket) => {
         io.emit('some-event', msg);
     })
 })
+
+instrument(io, {
+  auth: false
+});
 
 server.listen(4000, () => {
   console.log('server running at http://localhost:4000');
