@@ -5,7 +5,11 @@ const socketio = require('socket.io');
 const session = require('express-session');
 const cors = require('cors');
 const { instrument } = require("@socket.io/admin-ui");
+const { v4: uuidv4 } = require('uuid');
+const Storage = require('./store');
 
+
+const Store = new Storage();
 const app = express();
 const server = createServer(app,);
 const io = new socketio.Server(server,{
@@ -35,21 +39,47 @@ app.use((req, res, next) => {
 });
 
 io.use((socket, next) => {
+    const sessionID = socket.handshake.auth.sessionID;
+    if (sessionID) {
+      const session = Storage.findSession(sessionID);
+      if (session) {
+        if(socket.handshake.auth.username != session.username)
+        {
+          return next(new Error("Invalid Username"))
+        }
+        socket.sessionID = sessionID;
+        socket.userID = session.userID;
+        socket.username = session.username;
+        return next();
+      }
+    }
+
+
     const username = socket.handshake.auth.username;
     if (!username) {
       return next(new Error("invalid username"));
     }
+    socket.sessionID = uuidv4();
+    socket.userID = uuidv4();
     socket.username = username;
-    next();
+    Storage.saveSession(sessionID, socket);
+    return next();
 });
 
 
 io.on('connection', (socket) => {
+    console.log(socket);
+    socket.join(socket.userID);
+
+    socket.emit('session', {
+      sessionID: socket.sessionID,
+      userID: socket.userID
+    });
 
     const users = [];
     for (let [id, socket] of io.of("/").sockets) {
       users.push({
-        userID: id,
+        userID: socket.userID,
         username: socket.username,
       });
     }
@@ -60,15 +90,15 @@ io.on('connection', (socket) => {
 
     io.emit("users", users);
 
-    socket.on("connect_error", (err) => {
-        // if (err.message === "invalid username") {
-        //   this.usernameAlreadySelected = false;
-        // }
-      });
+    // socket.on("connect_error", (err) => {
+    //     // if (err.message === "invalid username") {
+    //     //   this.usernameAlreadySelected = false;
+    //     // }
+    //   });
 
-    socket.on('some-event', (msg) => {
+    socket.on('some-event', (msg, id, idr) => {
         console.log(msg);
-        io.emit('some-event', msg);
+        socket.to(idr).emit('some-event', msg, id);
     })
 })
 
