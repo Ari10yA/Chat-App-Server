@@ -11,7 +11,6 @@ class Storage{
     }
 
     static findSession(id){
-        console.log(store.get(id), 'from find');
         return store.get(id);
         
     }

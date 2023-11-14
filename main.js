@@ -40,9 +40,11 @@ app.use((req, res, next) => {
 
 io.use((socket, next) => {
     const sessionID = socket.handshake.auth.sessionID;
+    console.log(sessionID);
     if (sessionID) {
       const session = Storage.findSession(sessionID);
       if (session) {
+        console.log(session.username);
         if(socket.handshake.auth.username != session.username)
         {
           return next(new Error("Invalid Username"))
@@ -62,13 +64,13 @@ io.use((socket, next) => {
     socket.sessionID = uuidv4();
     socket.userID = uuidv4();
     socket.username = username;
-    Storage.saveSession(sessionID, socket);
+    Storage.saveSession(socket.sessionID , socket);
     return next();
 });
 
 
-io.on('connection', (socket) => {
-    console.log(socket);
+io.on('connection', async (socket) => {
+
     socket.join(socket.userID);
 
     socket.emit('session', {
@@ -84,9 +86,9 @@ io.on('connection', (socket) => {
       });
     }
 
-    socket.onAny((event, ...args) => {
-        console.log(event, args);
-    });
+    // socket.onAny((event, ...args) => {
+    //     console.log(event, args);
+    // });
 
     io.emit("users", users);
 
@@ -97,8 +99,16 @@ io.on('connection', (socket) => {
     //   });
 
     socket.on('some-event', (msg, id, idr) => {
-        console.log(msg);
-        socket.to(idr).emit('some-event', msg, id);
+      console.log(id);
+      try{
+        socket.to(idr).emit('some-event', msg, id, idr);
+        socket.to(id).emit('some-event', msg, id, idr);
+        // socket.emit('some-event', msg, id, idr);
+      }
+      catch(error){
+        console.log("Error", error);
+      }
+        
     })
 })
 
