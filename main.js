@@ -40,11 +40,9 @@ app.use((req, res, next) => {
 
 io.use((socket, next) => {
     const sessionID = socket.handshake.auth.sessionID;
-    console.log(sessionID);
     if (sessionID) {
       const session = Storage.findSession(sessionID);
       if (session) {
-        console.log(session.username);
         if(socket.handshake.auth.username != session.username)
         {
           return next(new Error("Invalid Username"))
@@ -79,7 +77,9 @@ io.on('connection', async (socket) => {
     });
 
     const users = [];
-    for (let [id, socket] of io.of("/").sockets) {
+    let existingUsers = Storage.findAllSession();
+
+    for (let socket of existingUsers) {
       users.push({
         userID: socket.userID,
         username: socket.username,
@@ -99,11 +99,10 @@ io.on('connection', async (socket) => {
     //   });
 
     socket.on('some-event', (msg, id, idr) => {
-      console.log(id);
       try{
         socket.to(idr).emit('some-event', msg, id, idr);
-        socket.to(id).emit('some-event', msg, id, idr);
-        // socket.emit('some-event', msg, id, idr);
+        socket.emit('some-event', msg, id, idr);
+        // socket.to(id).emit('some-event', msg, id, id)
       }
       catch(error){
         console.log("Error", error);
