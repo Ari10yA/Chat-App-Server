@@ -40,8 +40,10 @@ app.use((req, res, next) => {
 
 io.use((socket, next) => {
     const sessionID = socket.handshake.auth.sessionID;
+    //case where session id exisits in local storage
     if (sessionID) {
       const session = Storage.findSession(sessionID);
+      Storage.setReConnection(sessionID);
       if (session) {
         if(socket.handshake.auth.username != session.username)
         {
@@ -50,11 +52,12 @@ io.use((socket, next) => {
         socket.sessionID = sessionID;
         socket.userID = session.userID;
         socket.username = session.username;
+        socket.connected = true;
         return next();
       }
     }
 
-
+    //case when new user is trying to connect with socket.connect
     const username = socket.handshake.auth.username;
     if (!username) {
       return next(new Error("invalid username"));
@@ -62,18 +65,25 @@ io.use((socket, next) => {
     socket.sessionID = uuidv4();
     socket.userID = uuidv4();
     socket.username = username;
+    socket.connected = true;
     Storage.saveSession(socket.sessionID , socket);
     return next();
 });
+
 
 
 io.on('connection', async (socket) => {
 
     socket.join(socket.userID);
 
+    socket.onAny((event, ...args) => {
+        console.log(event, args);
+    });
+
     socket.emit('session', {
       sessionID: socket.sessionID,
-      userID: socket.userID
+      userID: socket.userID,
+      isConnected: socket.connected
     });
 
     const users = [];
@@ -83,12 +93,9 @@ io.on('connection', async (socket) => {
       users.push({
         userID: socket.userID,
         username: socket.username,
+        isConnected: socket.connected
       });
     }
-
-    // socket.onAny((event, ...args) => {
-    //     console.log(event, args);
-    // });
 
     io.emit("users", users);
 
@@ -108,6 +115,24 @@ io.on('connection', async (socket) => {
         console.log("Error", error);
       }
         
+    });
+
+    socket.on('disconnection-handler', (cb)=> {
+      Storage.setDisconnection(socket.sessionID);
+      cb('successful');
+      socket.emit('disconnection-handler');
+      const users = [];
+      let existingUsers = Storage.findAllSession();
+  
+      for (let socket of existingUsers) {
+        users.push({
+          userID: socket.userID,
+          username: socket.username,
+          isConnected: socket.connected
+        });
+      }
+      
+      io.emit("users", users);
     })
 })
 

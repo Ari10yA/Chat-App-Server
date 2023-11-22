@@ -7,7 +7,6 @@ class Storage{
 
     static saveSession (id, obj) {
         store.set(id, obj);
-        console.log('session stored');
     }
 
     static findSession(id){
@@ -19,25 +18,16 @@ class Storage{
         return [...store.values()]
     }
 
+    static setDisconnection(id) {
+        const obj = store.get(id);
+        obj.connected = false;
+    }
+
+    static setReConnection(id) {
+        const obj = store.get(id);
+        obj.connected = true;
+    }
+
 }
 
 module.exports = Storage
-
-// class InMemorySessionStore extends SessionStore {
-//     constructor() {
-//       super();
-//       this.sessions = new Map();
-//     }
-  
-//     findSession(id) {
-//       return this.sessions.get(id);
-//     }
-  
-//     saveSession(id, session) {
-//       this.sessions.set(id, session);
-//     }
-  
-//     findAllSessions() {
-//       return [...this.sessions.values()];
-//     }
-//   }
