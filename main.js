@@ -83,21 +83,40 @@ io.on('connection', async (socket) => {
     socket.emit('session', {
       sessionID: socket.sessionID,
       userID: socket.userID,
-      isConnected: socket.connected
-    });
-
-    const users = [];
-    let existingUsers = Storage.findAllSession();
-
-    for (let socket of existingUsers) {
-      users.push({
+      isConnected: socket.connected,
+      user: {
         userID: socket.userID,
         username: socket.username,
         isConnected: socket.connected
-      });
-    }
+      }
+    });
 
-    io.emit("users", users);
+    // const users = [];
+    // let existingUsers = Storage.findAllSession();
+
+    // for (let socket of existingUsers) {
+    //   users.push({
+    //     userID: socket.userID,
+    //     username: socket.username,
+    //     isConnected: socket.connected
+    //   });
+    // }
+    socket.on('add-user-req', (id) => {
+      let user = Storage.findUserToAdd(id);
+      let messageObj = {};
+      if(user){
+        messageObj.message='User found!',
+        messageObj.user = {
+          userID: user.userID,
+          username: user.username,
+          isConnected: user.connected
+        };
+      }
+      else{
+        messageObj.message = 'User not found!'
+      }
+      socket.emit('add-user', messageObj);
+    });
 
     // socket.on("connect_error", (err) => {
     //     // if (err.message === "invalid username") {
