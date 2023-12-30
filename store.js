@@ -24,6 +24,7 @@ class Storage{
     }
 
     static setReConnection(id) {
+        console.log(id, 'from setreconnection');
         const obj = store.get(id);
         if(!obj){
             throw new Error('Fetched user session id not valid');
@@ -33,7 +34,6 @@ class Storage{
 
     static findUserToAdd(userID){
         const existingUsers = [...store.values()];
-        console.log(existingUsers.length, 'total socket numbers');
         let user = existingUsers.find(arr => {
             return arr.userID==userID;
         })
@@ -41,10 +41,8 @@ class Storage{
             console.log('no user fount');
             throw new Error('userId not valid');
         }
-        console.log(typeof user);
         return user;
     }
-
 }
 
 module.exports = Storage
