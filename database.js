@@ -1,22 +1,21 @@
-const { Pool } = require('pg');
-const { Sequelize } = require('sequelize');
+const { Pool } = require("pg");
+const { Sequelize } = require("sequelize");
 
-const sequelize = new Sequelize('ChatApp', 'postgres', 'Aritya@123', {
-    host: 'localhost',
-    dialect: 'postgres'
+const sequelize = new Sequelize("ChatApp", "postgres", "Aritya@123", {
+  host: "localhost",
+  dialect: "postgres",
+  logging: false,
 });
 
-sequelize.authenticate()
-.then(() => {
-    console.log('connection established');
+sequelize
+  .authenticate()
+  .then(() => {
     sequelize.sync();
-})
-.catch(err => {
-    console.log('connection unsuccessful');
-})
+  })
+  .catch((err) => {});
 
 // const query = (text, params) => pool.query(text, params);
 
 // module.exports = query;
 
-module.exports = sequelize
+module.exports = sequelize;
